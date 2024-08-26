@@ -2,11 +2,11 @@ from fastapi import FastAPI, UploadFile, Body, File
 from fastapi.responses import JSONResponse, HTMLResponse
 import uvicorn
 from time import time
-import io
 
 from monkey_patch import set_monkey_patch
 from db import create_table, get_description, save_description, get_all_descriptions
 from s3 import create_backet, save_image, get_all_images
+from model import get_prediction
 
 
 app = FastAPI(
@@ -24,9 +24,10 @@ def describe(prompt: str = Body(embed=True), image: UploadFile = File(...)):
     if get_description(prompt, image_name) is not None:
         return HTMLResponse(status_code=409)
 
-    image_data = io.BytesIO(image.file.read())
+
+    image_data = image.file.read()
     save_image(image_name, image_data)
-    description = 'This is an amazing picture!'
+    description = get_prediction(prompt, image_data) #'This is an amazing picture!'
 
     save_description(prompt, image_name, description)
 

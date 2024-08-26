@@ -1,0 +1,35 @@
+services:
+  ollama:
+    image: ollama/ollama:0.3.6
+    container_name: dockerbasics_gpu_ollama
+    environment:
+      OLLAMA_FLASH_ATTENTION: 1
+    volumes:
+      - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: always
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:git-e2b7296
+    container_name: dockerbasics_gpu_openwebui
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEBUI_AUTH: 0
+    volumes:
+      - openwebui:/app/backend/data
+    depends_on:
+      - ollama
+    ports:
+      - 8000:8080
+    
+
+volumes:
+  ollama:
+    external: true
+  openwebui:

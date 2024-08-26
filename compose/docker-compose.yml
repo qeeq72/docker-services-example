@@ -37,6 +37,28 @@ services:
       timeout: 5s
       retries: 3
 
+  model:
+    image: ollama/ollama:0.3.6
+    container_name: dockerbasics_compose_model
+    environment:
+      OLLAMA_FLASH_ATTENTION: 1
+    volumes:
+      - ollama:/root/.ollama
+    networks: *default-networks
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama --version || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+
   app:
     image: dockerbasics_compose_app:latest
     build:
@@ -53,13 +75,22 @@ services:
       S3_PORT: 9000
       S3_ACCESS_KEY: user
       S3_SECRET_KEY: password
+      MODEL_HOST: model
+      MODEL_PORT: 11434
     networks: *default-networks
     ports:
       - 11111:80
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:80/healthcheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
     depends_on:
       db:
         condition: service_healthy
       s3:
+        condition: service_healthy
+      model:
         condition: service_healthy
 
 networks:
@@ -71,3 +102,5 @@ volumes:
     name: dockerbasics_compose_db_volume
   s3_volume:
     name: dockerbasics_compose_s3_volume
+  ollama:
+    external: true

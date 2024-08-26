@@ -1,5 +1,6 @@
 import os
 import json
+import io
 from minio import Minio
 
 
@@ -69,4 +70,5 @@ def save_image(image_name, image_data):
     client = get_client()
     if image_name in get_all_images():
         return
-    client.put_object(BUCKET_NAME, image_name, image_data, image_data.getbuffer().nbytes)
+    image = io.BytesIO(image_data)
+    client.put_object(BUCKET_NAME, image_name, image, image.getbuffer().nbytes)
